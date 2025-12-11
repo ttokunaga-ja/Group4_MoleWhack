@@ -1,5 +1,6 @@
 using UnityEngine;
 using System.Collections.Generic;
+using System.Linq;
 
 /// <summary>
 /// QR コード座標にオブジェクトを配置・更新するスクリプト
@@ -32,6 +33,16 @@ public class QRObjectPositioner : MonoBehaviour
     private Dictionary<string, GameObject> qrMarkerObjects = new Dictionary<string, GameObject>();
     // QR UUID → Sphere オブジェクトの マッピング
     private Dictionary<string, GameObject> qrSphereObjects = new Dictionary<string, GameObject>();
+    // QR UUID → 直近のポーズ履歴（時刻付き）
+    private class PoseSample
+    {
+        public float time;
+        public Vector3 position;
+        public Quaternion rotation;
+    }
+    private readonly Dictionary<string, List<PoseSample>> poseHistories = new Dictionary<string, List<PoseSample>>();
+    private const float poseHistorySeconds = 5f; // 過去5秒を対象
+    private const float iqrOutlierK = 1.5f;      // 外れ値判定の係数
 
     private void Start()
     {
@@ -68,6 +79,7 @@ public class QRObjectPositioner : MonoBehaviour
         if (QRManager.Instance != null)
         {
             QRManager.Instance.OnQRAdded += OnQRAdded;
+            QRManager.Instance.OnQRUpdated += OnQRUpdated;
             QRManager.Instance.OnQRLost += OnQRLost;
             LogPos("[START] ✓ Registered to QRManager events");
         }
@@ -91,6 +103,7 @@ public class QRObjectPositioner : MonoBehaviour
         if (QRManager.Instance != null)
         {
             QRManager.Instance.OnQRAdded -= OnQRAdded;
+            QRManager.Instance.OnQRUpdated -= OnQRUpdated;
             QRManager.Instance.OnQRLost -= OnQRLost;
             LogPos("[OnDestroy] ✓ Event listeners unregistered");
         }
@@ -111,6 +124,105 @@ public class QRObjectPositioner : MonoBehaviour
             return;
         }
         OnQRDetected(info.uuid, info.lastPose.position, info.lastPose.rotation);
+    }
+
+    /// <summary>
+    /// QR 更新時：位置/回転を最新の pose に追従
+    /// </summary>
+    private void OnQRUpdated(QRInfo info)
+    {
+        if (info == null) return;
+        if (!qrMarkerObjects.ContainsKey(info.uuid)) return;
+
+        if (cubePrefab == null || spherePrefab == null)
+        {
+            LogErrorPos("[QR_UPDATED] Prefabs are missing. Skip update.");
+            return;
+        }
+
+        Vector3 finalPosition = info.lastPose.position + positionOffset;
+        Quaternion finalRotation = rotateWithQR ? info.lastPose.rotation : Quaternion.identity;
+
+        // 履歴に追加
+        AddPoseSample(info.uuid, info.lastPose.position, info.lastPose.rotation);
+        // IQR ベースのロバスト平均を算出
+        (Vector3 smoothedPos, Quaternion smoothedRot) = GetSmoothedPose(info.uuid, finalPosition, finalRotation);
+
+        GameObject parentObject = qrMarkerObjects[info.uuid];
+        if (parentObject == null) return;
+
+        parentObject.transform.position = smoothedPos;
+        if (rotateWithQR)
+        {
+            parentObject.transform.rotation = smoothedRot;
+        }
+
+        // Sphere が存在する場合は高さに合わせて配置
+        if (qrSphereObjects.TryGetValue(info.uuid, out GameObject sphere) && sphere != null)
+        {
+            float sphereWorldHeight = cubeHeightOffset + sphereHeightOffset;
+            sphere.transform.position = smoothedPos + Vector3.up * sphereWorldHeight;
+        }
+
+        LogPos($"[QR_UPDATED] Pose updated for QR: {info.uuid}");
+    }
+
+    /// <summary>
+    /// 履歴にサンプルを追加し、古いものを削除
+    /// </summary>
+    private void AddPoseSample(string uuid, Vector3 position, Quaternion rotation)
+    {
+        if (!poseHistories.TryGetValue(uuid, out var list))
+        {
+            list = new List<PoseSample>();
+            poseHistories[uuid] = list;
+        }
+        list.Add(new PoseSample { time = Time.time, position = position, rotation = rotation });
+
+        float cutoff = Time.time - poseHistorySeconds;
+        list.RemoveAll(s => s.time < cutoff);
+    }
+
+    /// <summary>
+    /// IQR を用いて外れ値を除外したロバスト平均を返す（サンプル不足時は生値）
+    /// </summary>
+    private (Vector3 position, Quaternion rotation) GetSmoothedPose(string uuid, Vector3 fallbackPos, Quaternion fallbackRot)
+    {
+        if (!poseHistories.TryGetValue(uuid, out var list) || list.Count < 3)
+        {
+            return (fallbackPos, fallbackRot);
+        }
+
+        // 各軸ごとに IQR で外れ値除外し平均
+        float SmoothAxis(Func<Vector3, float> selector)
+        {
+            var values = list.Select(s => selector(s.position)).OrderBy(v => v).ToList();
+            int n = values.Count;
+            if (n < 3) return selector(fallbackPos);
+
+            float Q1 = values[(int)(0.25f * (n - 1))];
+            float Q3 = values[(int)(0.75f * (n - 1))];
+            float IQR = Q3 - Q1;
+            float min = Q1 - iqrOutlierK * IQR;
+            float max = Q3 + iqrOutlierK * IQR;
+
+            var filtered = values.Where(v => v >= min && v <= max).ToList();
+            if (filtered.Count == 0) return selector(fallbackPos);
+            return filtered.Average();
+        }
+
+        Vector3 smoothedPos = new Vector3(
+            SmoothAxis(p => p.x),
+            SmoothAxis(p => p.y),
+            SmoothAxis(p => p.z)
+        );
+
+        // 回転はローパス的に最新と前回平均を Slerp
+        // 過去の平均を取るのは難しいため、履歴末尾の回転と fallbackRot を軽く補間
+        Quaternion latestRot = list[^1].rotation;
+        Quaternion smoothedRot = Quaternion.Slerp(fallbackRot, latestRot, 0.2f);
+
+        return (smoothedPos, smoothedRot);
     }
 
     /// <summary>

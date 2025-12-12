@@ -18,8 +18,6 @@ using UnityEngine.Events;
 public class QRHitDetector : MonoBehaviour
 {
     [Header("References")]
-    [SerializeField, HideInInspector] private QRCodeTracker_MRUK qrCodeTracker;
-    [SerializeField, HideInInspector] private QRObjectPositioner qrObjectPositioner;
     [SerializeField] private bool enableHitLogging = true;
 
     [Header("Hit Events")]
@@ -29,126 +27,57 @@ public class QRHitDetector : MonoBehaviour
     [SerializeField] private int totalHits = 0;
     [SerializeField] private float lastHitTime = 0f;
 
-    private bool subscribed = false;
-
     private void Start()
     {
         LogHit("[START] QRHitDetector initializing...");
 
-        AutoAssignReferences();
+        // QRManager のイベントに登録
+        if (QRManager.Instance != null)
+        {
+            QRManager.Instance.OnQRLost += HandleQRLost;
+            LogHit("[START] ✓ Registered to QRManager events");
+        }
+        else
+        {
+            LogErrorHit("[START] QRManager instance not found!");
+            enabled = false;
+            return;
+        }
 
         LogHit("[START] ✓ QRHitDetector ready");
         LogHit($"[START] Enable Hit Logging: {enableHitLogging}");
     }
 
-    private void OnEnable()
+    private void OnDestroy()
     {
-        AutoAssignReferences();
-        EnsureSubscribed();
-    }
-
-    private void OnDisable()
-    {
-        Unsubscribe();
-    }
-
-    private void OnValidate()
-    {
-        // インスペクタでの参照抜けを防ぐため自動割り当てを実行
-        AutoAssignReferences();
-    }
-
-    private void AutoAssignReferences()
-    {
-        if (qrCodeTracker != null && (!qrCodeTracker.enabled || !qrCodeTracker.gameObject.activeInHierarchy))
+        if (QRManager.Instance != null)
         {
-            LogWarningHit("[AutoAssign] Existing QRCodeTracker is disabled or inactive. Reassigning...");
-            qrCodeTracker = null;
-        }
-
-        if (qrCodeTracker == null)
-        {
-            qrCodeTracker = FindFirstObjectByType<QRCodeTracker_MRUK>();
-            if (qrCodeTracker != null)
-            {
-                LogHit("[AutoAssign] ✓ QRCodeTracker_MRUK auto-assigned");
-            }
-            else
-            {
-                LogErrorHit("[AutoAssign] ✖ QRCodeTracker_MRUK not found (active & enabled)");
-            }
-        }
-
-        if (qrObjectPositioner != null && (!qrObjectPositioner.enabled || !qrObjectPositioner.gameObject.activeInHierarchy))
-        {
-            LogWarningHit("[AutoAssign] Existing QRObjectPositioner is disabled or inactive. Reassigning...");
-            qrObjectPositioner = null;
-        }
-
-        if (qrObjectPositioner == null)
-        {
-            qrObjectPositioner = FindFirstObjectByType<QRObjectPositioner>();
-            if (qrObjectPositioner != null)
-            {
-                LogHit("[AutoAssign] ✓ QRObjectPositioner auto-assigned");
-            }
-            else
-            {
-                LogWarningHit("[AutoAssign] ⚠ QRObjectPositioner not found (active & enabled)");
-            }
+            QRManager.Instance.OnQRLost -= HandleQRLost;
+            LogHit("[OnDestroy] ✓ Event listener unregistered");
         }
     }
 
-    private void EnsureSubscribed()
+    private void HandleQRLost(QRInfo info)
     {
-        if (qrCodeTracker == null || subscribed) return;
-
-        qrCodeTracker.OnQRLost += HandleQRLost;
-        subscribed = true;
-        LogHit("[Subscribe] ✓ QR Lost event listener registered");
-    }
-
-    private void Unsubscribe()
-    {
-        if (qrCodeTracker != null && subscribed)
+        if (info == null)
         {
-            qrCodeTracker.OnQRLost -= HandleQRLost;
-            LogHit("[Unsubscribe] ✓ QR Lost event listener unregistered");
+            LogErrorHit("[HIT_DETECTED] QRInfo is null");
+            return;
         }
-        subscribed = false;
-    }
 
-    /// <summary>
-    /// QR 認識喪失 = ハンマーで叩かれた = 当たり判定成功
-    /// </summary>
-    private void HandleQRLost(string uuid)
-    {
         totalHits++;
         lastHitTime = Time.time;
 
         LogHit("========================================");
-        LogHit($"[HIT_SUCCESS] ★★★ HIT DETECTED ★★★");
+        LogHit($"[HIT_DETECTED] ★★★ HIT DETECTED ★★★");
         LogHit("========================================");
-        LogHit($"[HIT_SUCCESS] QR UUID: {uuid}");
-        LogHit($"[HIT_SUCCESS] Total Hits: {totalHits}");
-        LogHit($"[HIT_SUCCESS] Time: {lastHitTime:F2}s");
-
-        // QRObjectPositioner が存在する場合、Sphere 削除を確認
-        if (qrObjectPositioner != null)
-        {
-            LogHit($"[HIT_SUCCESS] ✓ QRObjectPositioner will handle Sphere deletion");
-        }
-        else
-        {
-            LogWarningHit($"[HIT_SUCCESS] ⚠ QRObjectPositioner not available");
-        }
-
+        LogHit($"[HIT_DETECTED] QR UUID: {info.uuid}");
+        LogHit($"[HIT_DETECTED] Total Hits: {totalHits}");
+        LogHit($"[HIT_DETECTED] Time: {lastHitTime:F2}s");
         LogHit("========================================");
 
-        // イベント発火（スコア加算などの処理）
-        OnHitSuccess?.Invoke(uuid);
-
-        LogHit($"[HIT_SUCCESS] ✓ OnHitSuccess event invoked");
+        OnHitSuccess?.Invoke(info.uuid);
+        LogHit($"[HIT_DETECTED] ✓ OnHitSuccess event invoked");
     }
 
     /// <summary>

@@ -647,52 +647,6 @@ Transform:
   m_Children: []
   m_Father: {fileID: 463918445}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
---- !u!1 &569863001
-GameObject:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  serializedVersion: 6
-  m_Component:
-  - component: {fileID: 569863003}
-  - component: {fileID: 569863002}
-  m_Layer: 0
-  m_Name: QRCodeTracker
-  m_TagString: Untagged
-  m_Icon: {fileID: 0}
-  m_NavMeshLayer: 0
-  m_StaticEditorFlags: 0
-  m_IsActive: 1
---- !u!114 &569863002
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 569863001}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: a1b3395c5cbde544387e0f3e427725ce, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: Assembly-CSharp::QRCodeTracker_MRUK
-  targetCubeTransform: {fileID: 0}
-  enableDetailedLogging: 1
---- !u!4 &569863003
-Transform:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 569863001}
-  serializedVersion: 2
-  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
-  m_LocalPosition: {x: 0, y: 0, z: 0}
-  m_LocalScale: {x: 1, y: 1, z: 1}
-  m_ConstrainProportionsScale: 0
-  m_Children: []
-  m_Father: {fileID: 0}
-  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!1 &812735605
 GameObject:
   m_ObjectHideFlags: 0
@@ -816,6 +770,54 @@ Transform:
   m_Children: []
   m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!1 &1214619252
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 1214619254}
+  - component: {fileID: 1214619253}
+  m_Layer: 0
+  m_Name: QRManager
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!114 &1214619253
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1214619252}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 9a7e9774c8b680e43a632adf7c4fcf4c, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::QRManager
+  targetCubeTransform: {fileID: 0}
+  enableDetailedLogging: 1
+  detectionCooldown: 0.5
+  lostTimeout: 1
+--- !u!4 &1214619254
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1214619252}
+  serializedVersion: 2
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: 0, y: 0, z: 0}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 0}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!1 &1269720127
 GameObject:
   m_ObjectHideFlags: 0
@@ -845,12 +847,13 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 97cc437fd439fc1418a5c23dd9be01da, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::QRObjectPositioner
-  qrCodeTracker: {fileID: 569863002}
-  objectPrefab: {fileID: 0}
+  cubePrefab: {fileID: 2034738238671349268, guid: 7f25b425015e39341afa3228f7082036, type: 3}
+  spherePrefab: {fileID: 2675526346689840863, guid: b58e321351757bf4a84321d485a08be6, type: 3}
   enablePositioningLogging: 1
   positionOffset: {x: 0, y: 0, z: 0}
   rotateWithQR: 1
   cubeScale: 0.2
+  cubeHeightOffset: -0.1
   sphereScale: 0.15
   sphereHeightOffset: 0.35
 --- !u!4 &1269720129
@@ -868,7 +871,7 @@ Transform:
   m_Children: []
   m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
---- !u!1 &1391727563
+--- !u!1 &1685269500
 GameObject:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
@@ -876,63 +879,49 @@ GameObject:
   m_PrefabAsset: {fileID: 0}
   serializedVersion: 6
   m_Component:
-  - component: {fileID: 1391727565}
-  - component: {fileID: 1391727564}
+  - component: {fileID: 1685269502}
+  - component: {fileID: 1685269501}
   m_Layer: 0
-  m_Name: QRHitDetector
+  m_Name: HitValidator
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
   m_IsActive: 1
---- !u!114 &1391727564
+--- !u!114 &1685269501
 MonoBehaviour:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 1391727563}
+  m_GameObject: {fileID: 1685269500}
   m_Enabled: 1
   m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: d9e0d11d002ab5c438b10f0a38ea74ea, type: 3}
+  m_Script: {fileID: 11500000, guid: 6583a163fd837684286c524b12864c05, type: 3}
   m_Name: 
-  m_EditorClassIdentifier: Assembly-CSharp::QRHitDetector
-  qrCodeTracker: {fileID: 569863002}
-  qrObjectPositioner: {fileID: 1269720128}
-  enableHitLogging: 1
+  m_EditorClassIdentifier: Assembly-CSharp::HitValidator
+  cameraMonitor: {fileID: 2113720332}
+  maxLossWindow: 0.5
+  enableDetailedLogging: 1
   OnHitSuccess:
     m_PersistentCalls:
-      m_Calls:
-      - m_Target: {fileID: 0}
-        m_TargetAssemblyTypeName: 
-        m_MethodName: 
-        m_Mode: 0
-        m_Arguments:
-          m_ObjectArgument: {fileID: 0}
-          m_ObjectArgumentAssemblyTypeName: 
-          m_IntArgument: 0
-          m_FloatArgument: 0
-          m_StringArgument: 
-          m_BoolArgument: 0
-        m_CallState: 2
-  totalHits: 0
-  lastHitTime: 0
---- !u!4 &1391727565
+      m_Calls: []
+--- !u!4 &1685269502
 Transform:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 1391727563}
+  m_GameObject: {fileID: 1685269500}
   serializedVersion: 2
   m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
-  m_LocalPosition: {x: 2.45966, y: 0, z: 2.45966}
+  m_LocalPosition: {x: 2.95966, y: 0.35, z: 2.95966}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children: []
   m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
---- !u!1 &1648371624
+--- !u!1 &2113720331
 GameObject:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
@@ -940,126 +929,39 @@ GameObject:
   m_PrefabAsset: {fileID: 0}
   serializedVersion: 6
   m_Component:
-  - component: {fileID: 1648371629}
-  - component: {fileID: 1648371628}
-  - component: {fileID: 1648371627}
-  - component: {fileID: 1648371626}
-  - component: {fileID: 1648371625}
+  - component: {fileID: 2113720333}
+  - component: {fileID: 2113720332}
   m_Layer: 0
-  m_Name: Cube
+  m_Name: CameraOrientationMonitor
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
   m_IsActive: 1
---- !u!114 &1648371625
+--- !u!114 &2113720332
 MonoBehaviour:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 1648371624}
+  m_GameObject: {fileID: 2113720331}
   m_Enabled: 1
   m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 556a6acee49628541b66dc13a3a9e559, type: 3}
+  m_Script: {fileID: 11500000, guid: cc756804c5622934296112de16d60dbf, type: 3}
   m_Name: 
-  m_EditorClassIdentifier: Assembly-CSharp::CubeColorOnQr
-  qrCodeTracker: {fileID: 569863002}
-  detectedColor: {r: 0, g: 1, b: 1, a: 1}
-  defaultColor: {r: 1, g: 1, b: 1, a: 1}
-  colorDuration: 3
-  useHashedColor: 1
-  enableScaleAnimation: 1
-  animationScale: 1.2
-  animationDuration: 0.5
+  m_EditorClassIdentifier: Assembly-CSharp::CameraOrientationMonitor
+  minVisibleUUIDs: 2
   enableLogging: 1
---- !u!65 &1648371626
-BoxCollider:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 1648371624}
-  m_Material: {fileID: 0}
-  m_IncludeLayers:
-    serializedVersion: 2
-    m_Bits: 0
-  m_ExcludeLayers:
-    serializedVersion: 2
-    m_Bits: 0
-  m_LayerOverridePriority: 0
-  m_IsTrigger: 0
-  m_ProvidesContacts: 0
-  m_Enabled: 1
-  serializedVersion: 3
-  m_Size: {x: 1, y: 1, z: 1}
-  m_Center: {x: 0, y: 0, z: 0}
---- !u!23 &1648371627
-MeshRenderer:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 1648371624}
-  m_Enabled: 1
-  m_CastShadows: 1
-  m_ReceiveShadows: 1
-  m_DynamicOccludee: 1
-  m_StaticShadowCaster: 0
-  m_MotionVectors: 1
-  m_LightProbeUsage: 1
-  m_ReflectionProbeUsage: 1
-  m_RayTracingMode: 2
-  m_RayTraceProcedural: 0
-  m_RayTracingAccelStructBuildFlagsOverride: 0
-  m_RayTracingAccelStructBuildFlags: 1
-  m_SmallMeshCulling: 1
-  m_ForceMeshLod: -1
-  m_MeshLodSelectionBias: 0
-  m_RenderingLayerMask: 1
-  m_RendererPriority: 0
-  m_Materials:
-  - {fileID: 2100000, guid: 31321ba15b8f8eb4c954353edc038b1d, type: 2}
-  m_StaticBatchInfo:
-    firstSubMesh: 0
-    subMeshCount: 0
-  m_StaticBatchRoot: {fileID: 0}
-  m_ProbeAnchor: {fileID: 0}
-  m_LightProbeVolumeOverride: {fileID: 0}
-  m_ScaleInLightmap: 1
-  m_ReceiveGI: 1
-  m_PreserveUVs: 0
-  m_IgnoreNormalsForChartDetection: 0
-  m_ImportantGI: 0
-  m_StitchLightmapSeams: 1
-  m_SelectedEditorRenderState: 3
-  m_MinimumChartSize: 4
-  m_AutoUVMaxDistance: 0.5
-  m_AutoUVMaxAngle: 89
-  m_LightmapParameters: {fileID: 0}
-  m_GlobalIlluminationMeshLod: 0
-  m_SortingLayerID: 0
-  m_SortingLayer: 0
-  m_SortingOrder: 0
-  m_AdditionalVertexStreams: {fileID: 0}
---- !u!33 &1648371628
-MeshFilter:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 1648371624}
-  m_Mesh: {fileID: 10202, guid: 0000000000000000e000000000000000, type: 0}
---- !u!4 &1648371629
+--- !u!4 &2113720333
 Transform:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 1648371624}
+  m_GameObject: {fileID: 2113720331}
   serializedVersion: 2
   m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
-  m_LocalPosition: {x: 2.45966, y: 0, z: 2.45966}
+  m_LocalPosition: {x: 0, y: 0, z: 0}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children: []
@@ -1072,7 +974,7 @@ SceneRoots:
   - {fileID: 58589367}
   - {fileID: 513705382}
   - {fileID: 1122592170}
-  - {fileID: 569863003}
   - {fileID: 1269720129}
-  - {fileID: 1391727565}
-  - {fileID: 1648371629}
+  - {fileID: 1214619254}
+  - {fileID: 2113720333}
+  - {fileID: 1685269502}

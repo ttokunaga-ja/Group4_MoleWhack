@@ -4,21 +4,23 @@ using System.Collections;
 /// <summary>
 /// Cube Color On QR - MRUK v78+ 対応版
 /// 
-/// QR コード認識時に Cube の色を動的に変更します。
-/// QRCodeTracker_MRUK から OnQrRecognized() で通知を受けます。
+/// 役割:
+/// - この Cube が紐づく QR UUID を保持
+/// - 検出中: UUID からハッシュした色 or 指定色
+/// - 喪失時: lostColor に切り替え
+/// - 簡易スケール演出 (任意)
 /// 
-/// 特徴:
-/// - UUID からユニークな色を自動生成
-/// - 検出時のビジュアルフィードバック
-/// - 自動リセット機能
+/// 必須:
+/// - 同一位置の QR を表す Cube にこのスクリプトをアタッチ
+/// - QRObjectPositioner から Initialize(uuid) を呼ぶ
+/// - QRManager がシングルトンで存在し、OnQRAdded / OnQRLost を発火する
 /// </summary>
 public class CubeColorOnQr : MonoBehaviour
 {
     [Header("References")]
-    [SerializeField] private QRCodeTracker_MRUK qrCodeTracker;
-
     [Header("Color Settings")]
     [SerializeField] private Color detectedColor = Color.cyan;
+    [SerializeField] private Color lostColor = Color.red;
     [SerializeField] private Color defaultColor = Color.white;
     [SerializeField] private float colorDuration = 3f;
     [SerializeField] private bool useHashedColor = true;
@@ -36,80 +38,80 @@ public class CubeColorOnQr : MonoBehaviour
     private Coroutine scaleAnimationCoroutine;
     private Vector3 originalScale;
     private int detectionCount = 0;
+    private string boundUuid = null;
 
-    private void OnValidate()
+    private void OnEnable()
     {
-        // インスペクタでの誤設定防止: トラッカー未割り当てなら自動でシーン内の一つを拾う。
-        if (qrCodeTracker != null && (!qrCodeTracker.enabled || !qrCodeTracker.gameObject.activeInHierarchy))
+        if (QRManager.Instance != null)
         {
-            LogWarning("[AutoAssign] Existing QRCodeTracker is disabled or inactive. Reassigning...");
-            qrCodeTracker = null;
+            QRManager.Instance.OnQRAdded += OnQrAdded;
+            QRManager.Instance.OnQRLost += OnQRLost;
         }
+    }
 
-        if (qrCodeTracker == null)
+    private void OnDisable()
+    {
+        if (QRManager.Instance != null)
         {
-            qrCodeTracker = FindFirstObjectByType<QRCodeTracker_MRUK>();
-            if (qrCodeTracker != null)
-            {
-                Log("[AutoAssign] ✓ QRCodeTracker_MRUK auto-assigned");
-            }
-            else
-            {
-                LogWarning("[AutoAssign] ✖ QRCodeTracker_MRUK not found (active & enabled)");
-            }
+            QRManager.Instance.OnQRAdded -= OnQrAdded;
+            QRManager.Instance.OnQRLost -= OnQRLost;
         }
     }
 
     private void Start()
     {
         Log("[START] CubeColorOnQr initializing...");
-
+        
         cubeRenderer = GetComponent<Renderer>();
         if (cubeRenderer == null)
         {
-            LogError("[START] Renderer component not found on this GameObject!");
+            LogError("[START] Renderer component not found!");
             return;
         }
 
         originalScale = transform.localScale;
-
-        // 初期色を設定
         ResetToDefault();
-
-        // QRCodeTracker のイベントに登録
-        if (qrCodeTracker != null)
-        {
-            qrCodeTracker.OnQRDetected += OnQRDetected;
-            Log("[START] ✓ Registered to QRCodeTracker events");
-        }
-        else
-        {
-            LogWarning("[START] ⚠ QRCodeTracker reference not set!");
-        }
-
-        Log("[START] ✓ Initialization complete");
-    }
-
-    private void OnDestroy()
-    {
-        // イベント登録解除
-        if (qrCodeTracker != null)
-        {
-            qrCodeTracker.OnQRDetected -= OnQRDetected;
-        }
     }
 
     /// <summary>
-    /// QRCodeTracker からのイベントハンドラ
+    /// QRObjectPositioner から UUID を設定する
     /// </summary>
-    private void OnQRDetected(string uuid, Vector3 position, Quaternion rotation)
+    public void Initialize(string uuid)
     {
-        OnQrRecognized(uuid);
+        boundUuid = uuid;
+        Log($"[INIT] Bound to UUID: {uuid}");
+    }
+
+    private void OnQrAdded(QRInfo info)
+    {
+        if (info == null || string.IsNullOrEmpty(boundUuid)) return;
+        if (info.uuid != boundUuid) return;
+        OnQrRecognized(info.uuid);
+    }
+
+    private void OnQRLost(QRInfo info)
+    {
+        if (info == null || string.IsNullOrEmpty(boundUuid)) return;
+        if (info.uuid != boundUuid) return;
+
+        // 喪失時は lostColor を即時適用（リセット予約は解除）
+        if (colorResetCoroutine != null)
+        {
+            StopCoroutine(colorResetCoroutine);
+        }
+        if (scaleAnimationCoroutine != null)
+        {
+            StopCoroutine(scaleAnimationCoroutine);
+            transform.localScale = originalScale;
+        }
+
+        ApplyColor(lostColor);
+        Log($"[QR_LOST] Color changed to lostColor for UUID: {info.uuid}");
     }
 
     /// <summary>
     /// QR コード認識時のコールバック
-    /// QRCodeTracker_MRUK から呼ばれます
+    /// QRManager から呼ばれます
     /// </summary>
     public void OnQrRecognized(string qrUuid)
     {
@@ -152,7 +154,7 @@ public class CubeColorOnQr : MonoBehaviour
         }
 
         // 色を変更
-        cubeRenderer.material.color = newColor;
+        ApplyColor(newColor);
         Log($"  Color changed to: RGB({newColor.r:F3}, {newColor.g:F3}, {newColor.b:F3})");
 
         // スケール アニメーション
@@ -249,13 +251,18 @@ public class CubeColorOnQr : MonoBehaviour
     {
         if (cubeRenderer == null) return;
 
-        cubeRenderer.material.color = defaultColor;
+        ApplyColor(defaultColor);
         transform.localScale = originalScale;
 
         if (enableLogging && detectionCount > 0)
         {
             Log($"[RESET] Color reset to default: {defaultColor}");
         }
+    }
+
+    private void ApplyColor(Color color)
+    {
+        cubeRenderer.material.color = color;
     }
 
     /// <summary>

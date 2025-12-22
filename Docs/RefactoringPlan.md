@@ -10,7 +10,7 @@
 - ✅ `CubeColorOnQr`: 検出/喪失で色を変更。
 - ✅ `HitValidator`: `OnQRLost` で複合判定（カメラ向き + 喪失ウィンドウ）。ハンマーは実物前提で Unity 側距離/スイングは不使用。
 - ✅ `CameraOrientationMonitor`: 可視 UUID 数でカメラ向きを判定。
-- ⚠️ `QRHitDetector`: 旧実装が残存（無効化/削除予定）。
+- ✅ `QRHitDetector`: 旧実装を削除済み（リカバリシーン含む）。
 
 ---
 
@@ -58,7 +58,7 @@
 ## 6. フェーズ計画
 
 ### フェーズA: 後片付けと安全網
-- [ ] シーンから `QRHitDetector` を無効化/削除（HitValidator に一本化）。
+- [x] シーンから `QRHitDetector` を無効化/削除（HitValidator に一本化）。
 - [ ] `QRObjectPositioner` に Prefab が必ず割り当てられているか確認（ログで null が出ない状態）。
 - [ ] `lostTimeout` の妥当値確認（短すぎて誤喪失しないか）。
 

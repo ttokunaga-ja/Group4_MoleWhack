@@ -23,6 +23,12 @@ public class GameFlowController : MonoBehaviour
         }
         Instance = this;
         DontDestroyOnLoad(gameObject);
+        SceneManager.sceneLoaded += HandleSceneLoaded;
+    }
+
+    private void OnDestroy()
+    {
+        SceneManager.sceneLoaded -= HandleSceneLoaded;
     }
 
     public void GoToSetup()
@@ -44,5 +50,24 @@ public class GameFlowController : MonoBehaviour
     {
         if (string.IsNullOrEmpty(sceneName)) return;
         SceneManager.LoadScene(sceneName);
+    }
+
+    private void HandleSceneLoaded(Scene scene, LoadSceneMode mode)
+    {
+        if (scene.name == gameplaySceneName)
+        {
+            // Gameplay に入ったらセッションを開始（カウントダウン→プレイ）
+            var session = GameSessionManager.Instance;
+            if (session != null && session.AutoStartOnGameplayScene)
+            {
+                session.BeginSession();
+            }
+        }
+        else if (scene.name == setupSceneName)
+        {
+            // Setup に戻ったらセッションをリセット
+            GameSessionManager.Instance?.ForceResetToIdle();
+            ScoreManager.Instance?.ResetScore();
+        }
     }
 }

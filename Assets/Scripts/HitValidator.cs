@@ -87,6 +87,9 @@ public class HitValidator : MonoBehaviour
         // イベント発火
         OnHitSuccess?.Invoke(info.uuid);
         Log($"[HIT_SUCCESS] ✓ OnHitSuccess event invoked");
+
+        // スコア加算（柔軟に変更できるよう GameSessionManager 経由）
+        GameSessionManager.Instance?.RegisterHit(info.uuid);
     }
 
     private void Log(string message)

@@ -19,8 +19,8 @@ public class QRObjectPositioner : MonoBehaviour
 {
     [Header("References")]
     [SerializeField] private QRPoseLocker poseLocker;
-    [SerializeField] private GameObject cubePrefab;
-    [SerializeField] private GameObject spherePrefab;
+    [SerializeField] private GameObject respawnPrefab; // CubePrefab -> RespawnPrefab
+    [SerializeField] private GameObject enemyPrefab;   // SpherePrefab -> EnemyPrefab
     [SerializeField] private bool enablePositioningLogging = true;
     [SerializeField] private bool useLockedPoseOnly = true;
     [SerializeField] private bool clearOnCollect = true;
@@ -54,30 +54,38 @@ public class QRObjectPositioner : MonoBehaviour
     {
         LogPos("[START] QRObjectPositioner initializing...");
 
-        LogPos($"[START] Cube Prefab (Inspector): {(cubePrefab != null ? cubePrefab.name : "null")}");
-        LogPos($"[START] Sphere Prefab (Inspector): {(spherePrefab != null ? spherePrefab.name : "null")}");
+        LogPos($"[START] Respawn Prefab (Inspector): {(respawnPrefab != null ? respawnPrefab.name : "null")}");
+        LogPos($"[START] Enemy Prefab (Inspector): {(enemyPrefab != null ? enemyPrefab.name : "null")}");
         LogPos($"[START] PoseLocker (Inspector): {(poseLocker != null ? poseLocker.name : "null")}");
 
         // Inspector 未設定なら Resources から読み込みを試みる（最終的に null なら停止）
-        if (cubePrefab == null)
+        if (respawnPrefab == null)
         {
-            cubePrefab = Resources.Load<GameObject>("Prefabs/Cube");
-            LogWarningPos(cubePrefab != null
-                ? "[START] ⚠ cubePrefab not assigned. Loaded from Resources/Prefabs/Cube"
-                : "[START] ⚠ cubePrefab missing (Inspector & Resources).");
+            respawnPrefab = Resources.Load<GameObject>("Prefabs/RespawnPrefab");
+            if (respawnPrefab == null)
+            {
+                respawnPrefab = Resources.Load<GameObject>("Prefabs/Cube");
+            }
+            LogWarningPos(respawnPrefab != null
+                ? "[START] ⚠ respawnPrefab not assigned. Loaded from Resources/Prefabs/RespawnPrefab (or fallback Cube)"
+                : "[START] ⚠ respawnPrefab missing (Inspector & Resources).");
         }
 
-        if (spherePrefab == null)
+        if (enemyPrefab == null)
         {
-            spherePrefab = Resources.Load<GameObject>("Prefabs/Sphere");
-            LogWarningPos(spherePrefab != null
-                ? "[START] ⚠ spherePrefab not assigned. Loaded from Resources/Prefabs/Sphere"
-                : "[START] ⚠ spherePrefab missing (Inspector & Resources).");
+            enemyPrefab = Resources.Load<GameObject>("Prefabs/EnemyPrefab");
+            if (enemyPrefab == null)
+            {
+                enemyPrefab = Resources.Load<GameObject>("Prefabs/Sphere");
+            }
+            LogWarningPos(enemyPrefab != null
+                ? "[START] ⚠ enemyPrefab not assigned. Loaded from Resources/Prefabs/EnemyPrefab (or fallback Sphere)"
+                : "[START] ⚠ enemyPrefab missing (Inspector & Resources).");
         }
 
-        if (cubePrefab == null || spherePrefab == null)
+        if (respawnPrefab == null || enemyPrefab == null)
         {
-            LogErrorPos("[START] Prefabs are missing. Please assign Cube/Sphere prefabs in the Inspector or place them under Resources/Prefabs.");
+            LogErrorPos("[START] Prefabs are missing. Please assign Respawn/Enemy prefabs in the Inspector or place them under Resources/Prefabs.");
             enabled = false;
             return;
         }
@@ -149,7 +157,7 @@ public class QRObjectPositioner : MonoBehaviour
             return;
         }
 
-        if (cubePrefab == null || spherePrefab == null)
+        if (respawnPrefab == null || enemyPrefab == null)
         {
             LogErrorPos("[QR_ADDED] Prefabs are missing. Skip instantiation. (Assign in Inspector or put under Resources/Prefabs)");
             return;
@@ -166,7 +174,7 @@ public class QRObjectPositioner : MonoBehaviour
         if (info == null) return;
         if (!qrMarkerObjects.ContainsKey(info.uuid)) return;
 
-        if (cubePrefab == null || spherePrefab == null)
+        if (respawnPrefab == null || enemyPrefab == null)
         {
             LogErrorPos("[QR_UPDATED] Prefabs are missing. Skip update.");
             return;
@@ -266,7 +274,7 @@ public class QRObjectPositioner : MonoBehaviour
         LogPos($"[QR_DETECTED] UUID: {uuid}");
         LogPos($"[QR_DETECTED] Position: {position}");
 
-        if (cubePrefab == null || spherePrefab == null)
+        if (respawnPrefab == null || enemyPrefab == null)
         {
             LogErrorPos("[QR_DETECTED] Prefabs are missing. Skip instantiation. (Assign in Inspector or put under Resources/Prefabs)");
             return;
@@ -285,11 +293,11 @@ public class QRObjectPositioner : MonoBehaviour
             parentObject.transform.SetParent(transform);
 
             // Cube（マーカー）生成 - QR 位置表示用（削除されない）
-            GameObject cubeMarker = Instantiate(cubePrefab, parentObject.transform);
+            GameObject cubeMarker = Instantiate(respawnPrefab, parentObject.transform);
             cubeMarker.transform.localPosition = new Vector3(0f, cubeHeightOffset, 0f);
             cubeMarker.transform.localRotation = Quaternion.identity;
-            cubeMarker.transform.localScale = cubePrefab.transform.localScale * cubeScale;
-            cubeMarker.name = "CubeMarker";
+            cubeMarker.transform.localScale = respawnPrefab.transform.localScale * cubeScale;
+            cubeMarker.name = "RespawnMarker";
 
             // UUID を紐付けて色を管理
             CubeColorOnQr cubeColor = cubeMarker.GetComponent<CubeColorOnQr>();
@@ -304,13 +312,13 @@ public class QRObjectPositioner : MonoBehaviour
             }
 
             // Sphere（当たり判定用）生成 - Cube の上に配置
-            GameObject sphere = Instantiate(spherePrefab);
+            GameObject sphere = Instantiate(enemyPrefab);
             float sphereWorldHeight = cubeHeightOffset + sphereHeightOffset;
             sphere.transform.position = finalPosition + Vector3.up * sphereWorldHeight;
             sphere.transform.SetParent(parentObject.transform, true); // world position stays
             sphere.transform.localRotation = Quaternion.identity;
-            sphere.transform.localScale = spherePrefab.transform.localScale * sphereScale;
-            sphere.name = "CollisionSphere";
+            sphere.transform.localScale = enemyPrefab.transform.localScale * sphereScale;
+            sphere.name = "Enemy";
 
             qrMarkerObjects[uuid] = parentObject;
             qrSphereObjects[uuid] = sphere;
@@ -336,13 +344,13 @@ public class QRObjectPositioner : MonoBehaviour
             // Sphere が削除されている場合は再生成（ループ機能）
             if (!qrSphereObjects.ContainsKey(uuid) || qrSphereObjects[uuid] == null)
             {
-                GameObject sphere = Instantiate(spherePrefab);
+            GameObject sphere = Instantiate(enemyPrefab);
                 float sphereWorldHeight = cubeHeightOffset + sphereHeightOffset;
                 sphere.transform.position = existingObject.transform.position + Vector3.up * sphereWorldHeight;
                 sphere.transform.SetParent(existingObject.transform, true); // world position stays
                 sphere.transform.localRotation = Quaternion.identity;
-                sphere.transform.localScale = spherePrefab.transform.localScale * sphereScale;
-                sphere.name = "CollisionSphere";
+                sphere.transform.localScale = enemyPrefab.transform.localScale * sphereScale;
+                sphere.name = "Enemy";
 
                 qrSphereObjects[uuid] = sphere;
 

@@ -610,8 +610,6 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: a1b3395c5cbde544387e0f3e427725ce, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::QRCodeTracker_MRUK
-  targetCubeTransform: {fileID: 0}
-  enableDetailedLogging: 1
 --- !u!65 &207147542
 BoxCollider:
   m_ObjectHideFlags: 0
@@ -2065,8 +2063,6 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: a1b3395c5cbde544387e0f3e427725ce, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::QRCodeTracker_MRUK
-  targetCubeTransform: {fileID: 0}
-  enableDetailedLogging: 1
 --- !u!1 &1666470889
 GameObject:
   m_ObjectHideFlags: 0

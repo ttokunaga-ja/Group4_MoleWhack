@@ -33,7 +33,8 @@ public class CubeColorOnQr : MonoBehaviour
     [Header("Logging")]
     [SerializeField] private bool enableLogging = true;
 
-    private Renderer cubeRenderer;
+    [SerializeField] private Renderer targetRenderer;
+    [SerializeField] private bool disableColorChanges = true; // 色変更を完全無効化するフラグ（デフォルト有効）
     private Coroutine colorResetCoroutine;
     private Coroutine scaleAnimationCoroutine;
     private Vector3 originalScale;
@@ -61,16 +62,19 @@ public class CubeColorOnQr : MonoBehaviour
     private void Start()
     {
         Log("[START] CubeColorOnQr initializing...");
-        
-        cubeRenderer = GetComponent<Renderer>();
-        if (cubeRenderer == null)
+
+        targetRenderer = targetRenderer != null ? targetRenderer : GetComponent<Renderer>();
+        if (targetRenderer == null)
         {
-            LogError("[START] Renderer component not found!");
-            return;
+            // Blender製モデルなどで Renderer が子階層にある場合に対応
+            targetRenderer = GetComponentInChildren<Renderer>();
         }
 
         originalScale = transform.localScale;
-        ResetToDefault();
+        if (!disableColorChanges && targetRenderer != null)
+        {
+            ResetToDefault();
+        }
     }
 
     /// <summary>
@@ -94,6 +98,8 @@ public class CubeColorOnQr : MonoBehaviour
         if (info == null || string.IsNullOrEmpty(boundUuid)) return;
         if (info.uuid != boundUuid) return;
 
+        if (disableColorChanges) return;
+
         // 喪失時は lostColor を即時適用（リセット予約は解除）
         if (colorResetCoroutine != null)
         {
@@ -115,11 +121,8 @@ public class CubeColorOnQr : MonoBehaviour
     /// </summary>
     public void OnQrRecognized(string qrUuid)
     {
-        if (cubeRenderer == null)
-        {
-            LogWarning("[QR_RECOGNIZED] Renderer is null");
-            return;
-        }
+        if (disableColorChanges) return;
+        if (targetRenderer == null) return;
 
         detectionCount++;
 
@@ -249,7 +252,7 @@ public class CubeColorOnQr : MonoBehaviour
     /// </summary>
     public void ResetToDefault()
     {
-        if (cubeRenderer == null) return;
+        if (disableColorChanges || targetRenderer == null) return;
 
         ApplyColor(defaultColor);
         transform.localScale = originalScale;
@@ -262,7 +265,8 @@ public class CubeColorOnQr : MonoBehaviour
 
     private void ApplyColor(Color color)
     {
-        cubeRenderer.material.color = color;
+        if (disableColorChanges || targetRenderer == null) return;
+        targetRenderer.material.color = color;
     }
 
     /// <summary>

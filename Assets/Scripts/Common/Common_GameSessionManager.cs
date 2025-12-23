@@ -23,6 +23,7 @@ public class GameSessionManager : MonoBehaviour
     [SerializeField] private int pointsPerHit = 10;
     [SerializeField] private bool autoStartOnGameplayScene = true;
     [SerializeField] private bool autoGoToResultsOnEnd = true;
+    [SerializeField] private bool disableAutoEnd = false; // SingleScene fallback: keep session alive
 
     public SessionState State { get; private set; } = SessionState.Idle;
     public float RemainingPlaySeconds { get; private set; }
@@ -61,6 +62,13 @@ public class GameSessionManager : MonoBehaviour
 
     private void Update()
     {
+        if (disableAutoEnd && State == SessionState.Playing)
+        {
+            // Keep session alive; still fire play tick with remaining time = playDurationSeconds (static)
+            OnPlayTick?.Invoke(Mathf.Max(0f, RemainingPlaySeconds));
+            return;
+        }
+
         if (State == SessionState.Countdown)
         {
             RemainingCountdown -= Time.deltaTime;
@@ -91,6 +99,8 @@ public class GameSessionManager : MonoBehaviour
         RemainingPlaySeconds = Mathf.Max(0f, playDurationSeconds);
         State = countdownSeconds > 0f ? SessionState.Countdown : SessionState.Playing;
 
+        Debug.Log($"[GameSessionManager] BeginSession -> State={State}, Countdown={RemainingCountdown:F2}, PlayDuration={RemainingPlaySeconds:F2}");
+
         if (State == SessionState.Playing)
         {
             OnCountdownFinished?.Invoke();
@@ -103,12 +113,19 @@ public class GameSessionManager : MonoBehaviour
         OnCountdownFinished?.Invoke();
         RemainingPlaySeconds = Mathf.Max(0f, playDurationSeconds);
         State = SessionState.Playing;
+        Debug.Log("[GameSessionManager] StartGameplay -> State=Playing (disableAutoEnd=" + disableAutoEnd + ")");
     }
 
     public void EndSession()
     {
+        if (disableAutoEnd)
+        {
+            Debug.Log("[GameSessionManager] EndSession called but disableAutoEnd=true; ignoring.");
+            return;
+        }
         if (State == SessionState.Ended) return;
         State = SessionState.Ended;
+        Debug.Log("[GameSessionManager] EndSession");
         OnSessionEnded?.Invoke();
         if (autoGoToResultsOnEnd)
         {

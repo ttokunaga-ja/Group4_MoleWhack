@@ -233,9 +233,6 @@ PrefabInstance:
     - targetCorrespondingSourceObject: {fileID: 100004, guid: 126d619cf4daa52469682f85c1378b4a, type: 3}
       insertIndex: -1
       addedObject: {fileID: 328886244}
-    - targetCorrespondingSourceObject: {fileID: 100004, guid: 126d619cf4daa52469682f85c1378b4a, type: 3}
-      insertIndex: -1
-      addedObject: {fileID: 328886249}
     - targetCorrespondingSourceObject: {fileID: 100006, guid: 126d619cf4daa52469682f85c1378b4a, type: 3}
       insertIndex: -1
       addedObject: {fileID: 117026414}
@@ -602,19 +599,6 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 6eb80619d84863c4383de0965795e7de, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::PermissionRequester
---- !u!114 &328886249
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 117026405}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 2b6d07f346a0d6c43ac707d966a36052, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: Assembly-CSharp::Gameplay_PassthroughStateLogger
-  pollInterval: 1
 --- !u!1 &348579267
 GameObject:
   m_ObjectHideFlags: 0

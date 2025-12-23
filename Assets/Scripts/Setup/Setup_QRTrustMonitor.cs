@@ -20,6 +20,7 @@ public class QRTrustMonitor : MonoBehaviour
 
     [Header("Settings")]
     [SerializeField] private float distanceThresholdMeters = 1.0f;
+    [SerializeField] private int minObservationsPerUuid = 3;
     [SerializeField] private float trustLowThreshold = 0.5f;
     [SerializeField] private bool enableLogging = true;
 
@@ -31,6 +32,7 @@ public class QRTrustMonitor : MonoBehaviour
     public event Action OnTrustLow;
 
     private readonly Dictionary<string, HashSet<string>> knownSets = new Dictionary<string, HashSet<string>>();
+    private readonly Dictionary<string, int> observationCounts = new Dictionary<string, int>();
     private bool isRegisteredToQRManager;
 
     private void Awake()
@@ -71,6 +73,7 @@ public class QRTrustMonitor : MonoBehaviour
     {
         Mode = MonitorMode.Setup;
         knownSets.Clear();
+        observationCounts.Clear();
         CurrentTrust = 1f;
         Log("[SETUP] Begin setup collection");
     }
@@ -86,6 +89,7 @@ public class QRTrustMonitor : MonoBehaviour
     {
         Mode = MonitorMode.Idle;
         knownSets.Clear();
+        observationCounts.Clear();
         CurrentTrust = 1f;
         Log("[RESET] Cleared known sets");
     }
@@ -114,6 +118,13 @@ public class QRTrustMonitor : MonoBehaviour
     {
         if (Mode != MonitorMode.Setup) return;
         if (info == null || QRManager.Instance == null) return;
+
+        // 観測回数をカウント
+        if (!observationCounts.ContainsKey(info.uuid))
+        {
+            observationCounts[info.uuid] = 0;
+        }
+        observationCounts[info.uuid]++;
 
         var visible = QRManager.Instance.CurrentTrackedUUIDs;
         if (visible == null || visible.Count == 0) return;
@@ -159,7 +170,17 @@ public class QRTrustMonitor : MonoBehaviour
 
         var visible = QRManager.Instance.CurrentTrackedUUIDs;
         int visibleCount = visible.Count;
-        if (knownSets.Count == 0)
+        // 観測数が閾値未満のセットは無視
+        var eligibleSets = new List<HashSet<string>>();
+        foreach (var kvp in knownSets)
+        {
+            if (observationCounts.TryGetValue(kvp.Key, out int count) && count >= minObservationsPerUuid)
+            {
+                eligibleSets.Add(kvp.Value);
+            }
+        }
+
+        if (eligibleSets.Count == 0)
         {
             SetTrust(0f);
             return;
@@ -168,12 +189,12 @@ public class QRTrustMonitor : MonoBehaviour
         // 既知集合との一致率を計算（最小値を採用）
         float minKnownRatio = 1f;
         HashSet<string> unionKnown = new HashSet<string>();
-        foreach (var kvp in knownSets)
+        foreach (var set in eligibleSets)
         {
-            unionKnown.UnionWith(kvp.Value);
-            if (kvp.Value.Count == 0) continue;
-            int hit = visible.Count == 0 ? 0 : visible.Intersect(kvp.Value).Count();
-            float ratio = (float)hit / kvp.Value.Count;
+            unionKnown.UnionWith(set);
+            if (set.Count == 0) continue;
+            int hit = visible.Count == 0 ? 0 : visible.Intersect(set).Count();
+            float ratio = (float)hit / set.Count;
             minKnownRatio = Mathf.Min(minKnownRatio, ratio);
         }
 

@@ -27,6 +27,7 @@ public class QRObjectPositioner : MonoBehaviour
     [SerializeField] private bool spawnDefeatedOnLoss = true;
     [SerializeField] private bool enablePositioningLogging = true;
     [SerializeField] private bool useLockedPoseOnly = true;
+    [SerializeField] private bool enemySpawnEnabled = true;
     [SerializeField] private EnemyVariant enemyVariant = EnemyVariant.Default;
 
     [Header("Transform Settings")]
@@ -64,11 +65,12 @@ public class QRObjectPositioner : MonoBehaviour
     private readonly Dictionary<string, GameObject> qrMarkerObjects = new Dictionary<string, GameObject>();
     private readonly Dictionary<string, GameObject> qrEnemyObjects = new Dictionary<string, GameObject>();
     private readonly Dictionary<string, GameObject> qrDefeatedObjects = new Dictionary<string, GameObject>();
+    private readonly HashSet<string> placedLocked = new HashSet<string>();
+    private readonly HashSet<string> pendingLockedUuids = new HashSet<string>();
 
     private Common_QRPoseSmoother poseSmoother;
     private Setup_QRAnchorFactory anchorFactory;
     private Setup_QRPrefabResolver prefabResolver;
-    private readonly HashSet<string> placedLocked = new HashSet<string>();
 
     private void Awake()
     {
@@ -108,6 +110,14 @@ public class QRObjectPositioner : MonoBehaviour
             return;
         }
 
+        if (poseLocker == null)
+            poseLocker = FindObjectOfType<QRPoseLocker>();
+        if (poseLocker != null)
+        {
+            poseLocker.OnPoseLocked += HandlePoseLocked;
+            poseLocker.OnCollectingStarted += HandleCollectingStarted;
+        }
+
         LogPos("[START] ✓ QRObjectPositioner ready");
     }
 
@@ -119,11 +129,22 @@ public class QRObjectPositioner : MonoBehaviour
             QRManager.Instance.OnQRUpdated -= OnQRUpdated;
             QRManager.Instance.OnQRLost -= OnQRLost;
         }
+
+        if (poseLocker != null)
+        {
+            poseLocker.OnPoseLocked -= HandlePoseLocked;
+            poseLocker.OnCollectingStarted -= HandleCollectingStarted;
+        }
     }
 
     private void OnQRAdded(QRInfo info)
     {
         if (info == null) return;
+        if (useLockedPoseOnly && poseLocker != null && poseLocker.State != QRPoseLocker.LockerState.Locked)
+        {
+            pendingLockedUuids.Add(info.uuid);
+            return;
+        }
         Pose poseToUse = info.lastPose;
         if (useLockedPoseOnly && poseLocker != null && poseLocker.State == QRPoseLocker.LockerState.Locked && poseLocker.GetLockedPose(info.uuid, out var locked))
         {
@@ -137,9 +158,9 @@ public class QRObjectPositioner : MonoBehaviour
         if (info == null) return;
         if (!qrMarkerObjects.ContainsKey(info.uuid)) return;
 
-        if (useLockedPoseOnly && poseLocker != null && poseLocker.State == QRPoseLocker.LockerState.Locked)
+        // ロック運用時は収集中・ロック後とも更新しない
+        if (useLockedPoseOnly && poseLocker != null)
         {
-            // ロック済みなら更新しない
             return;
         }
 
@@ -179,17 +200,19 @@ public class QRObjectPositioner : MonoBehaviour
             GameObject parentObject = anchorFactory.CreateParent(uuid, finalPosition, finalRotation, transform);
             anchorFactory.CreateRespawn(parentObject, respawnPrefab, respawnSettings, uuid);
 
-            Setup_QRAnchorFactory.SpawnSettings activeSettings = GetActiveEnemySettings();
-            GameObject enemy = anchorFactory.CreateEnemy(parentObject, GetActiveEnemyPrefab(), activeSettings, finalPosition, GetActiveEnemyName());
-
             qrMarkerObjects[uuid] = parentObject;
-            qrEnemyObjects[uuid] = enemy;
+            if (enemySpawnEnabled)
+            {
+                Setup_QRAnchorFactory.SpawnSettings activeSettings = GetActiveEnemySettings();
+                GameObject enemy = anchorFactory.CreateEnemy(parentObject, GetActiveEnemyPrefab(), activeSettings, finalPosition, GetActiveEnemyName());
+                qrEnemyObjects[uuid] = enemy;
+            }
             if (useLockedPoseOnly && poseLocker != null && poseLocker.State == QRPoseLocker.LockerState.Locked)
             {
                 placedLocked.Add(uuid);
             }
 
-            LogPos($"[QR_POSITIONED] ✓ Marker + Enemy created for QR: {uuid}");
+            LogPos($"[QR_POSITIONED] ✓ Marker created for QR: {uuid} (enemy spawned: {enemySpawnEnabled})");
         }
         else
         {
@@ -206,7 +229,7 @@ public class QRObjectPositioner : MonoBehaviour
                 existingObject.transform.rotation = finalRotation;
             }
 
-            if (!qrEnemyObjects.ContainsKey(uuid) || qrEnemyObjects[uuid] == null)
+            if (enemySpawnEnabled && (!qrEnemyObjects.ContainsKey(uuid) || qrEnemyObjects[uuid] == null))
             {
                 Setup_QRAnchorFactory.SpawnSettings activeSettings = GetActiveEnemySettings();
                 GameObject enemy = anchorFactory.CreateEnemy(existingObject, GetActiveEnemyPrefab(), activeSettings, existingObject.transform.position, GetActiveEnemyName());
@@ -257,6 +280,22 @@ public class QRObjectPositioner : MonoBehaviour
         }
     }
 
+    private void HandlePoseLocked(string uuid, Pose pose)
+    {
+        if (!useLockedPoseOnly || poseLocker == null) return;
+        if (!pendingLockedUuids.Contains(uuid)) return;
+
+        pendingLockedUuids.Remove(uuid);
+        OnQRDetected(uuid, pose.position, pose.rotation);
+        placedLocked.Add(uuid);
+    }
+
+    private void HandleCollectingStarted()
+    {
+        pendingLockedUuids.Clear();
+        placedLocked.Clear();
+    }
+
     public int GetPositionedObjectCount() => qrMarkerObjects.Count;
     public int GetActiveEnemyCount() => qrEnemyObjects.Count;
 
@@ -280,6 +319,45 @@ public class QRObjectPositioner : MonoBehaviour
         qrEnemyObjects.Clear();
         qrDefeatedObjects.Clear();
         LogPos("[CLEAR] ✓ All QR objects cleared");
+    }
+
+    public void SetEnemySpawnEnabled(bool enabled)
+    {
+        enemySpawnEnabled = enabled;
+        LogPos($"[SPAWN] Enemy spawn enabled: {enabled}");
+    }
+
+    public void ForceSpawnMissingEnemies()
+    {
+        if (!enemySpawnEnabled) return;
+        foreach (var kvp in qrMarkerObjects)
+        {
+            string uuid = kvp.Key;
+            GameObject parentObject = kvp.Value;
+            if (parentObject == null) continue;
+            if (!qrEnemyObjects.ContainsKey(uuid) || qrEnemyObjects[uuid] == null)
+            {
+                Setup_QRAnchorFactory.SpawnSettings activeSettings = GetActiveEnemySettings();
+                GameObject enemy = anchorFactory.CreateEnemy(parentObject, GetActiveEnemyPrefab(), activeSettings, parentObject.transform.position, GetActiveEnemyName());
+                qrEnemyObjects[uuid] = enemy;
+                LogPos($"[SPAWN] Enemy spawned for QR: {uuid} (force)");
+            }
+        }
+    }
+
+    public List<Transform> GetActiveEnemies()
+    {
+        List<Transform> list = new List<Transform>();
+        foreach (var enemy in qrEnemyObjects.Values)
+        {
+            if (enemy != null) list.Add(enemy.transform);
+        }
+        return list;
+    }
+
+    public Dictionary<string, GameObject> GetUuidEnemyMap()
+    {
+        return new Dictionary<string, GameObject>(qrEnemyObjects);
     }
 
     private void LogPos(string message)

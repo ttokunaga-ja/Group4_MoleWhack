@@ -21,6 +21,7 @@ public class Gameplay_SingleSceneSetupBootstrap : MonoBehaviour
     [SerializeField] private bool onlyWhenSetupSceneNotLoaded = true;
     [SerializeField] private bool autoRetryOnFail = true;
     [SerializeField] private float retryDelaySeconds = 2f;
+    [SerializeField] private bool keepSessionAlive = true; // disable auto-end for single-scene fallback
 
     private bool gameplayStarted = false;
 
@@ -31,12 +32,23 @@ public class Gameplay_SingleSceneSetupBootstrap : MonoBehaviour
         positioner = positioner ?? FindObjectOfType<QRObjectPositioner>();
         sessionManager = sessionManager ?? GameSessionManager.Instance ?? FindObjectOfType<GameSessionManager>();
 
+        if (sessionManager != null && keepSessionAlive)
+        {
+            var disableAutoEndField = typeof(GameSessionManager).GetField("disableAutoEnd", System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance);
+            if (disableAutoEndField != null)
+            {
+                disableAutoEndField.SetValue(sessionManager, true);
+                Debug.Log("[SingleSceneSetupBootstrap] disableAutoEnd=true for single-scene mode");
+            }
+        }
+
         if (onlyWhenSetupSceneNotLoaded)
         {
             bool setupLoaded = SceneManager.GetSceneByName(setupSceneName).isLoaded;
             bool isGameplay = SceneManager.GetActiveScene().name == gameplaySceneName;
             if (!isGameplay || setupLoaded)
             {
+                Debug.Log("[SingleSceneSetupBootstrap] Disabled (setup scene loaded or active scene not gameplay)");
                 enabled = false;
                 return;
             }
@@ -64,11 +76,13 @@ public class Gameplay_SingleSceneSetupBootstrap : MonoBehaviour
             poseLocker.OnPoseLocked += HandlePoseLocked;
             poseLocker.OnLockFailed += HandleLockFailed;
             poseLocker.BeginCollect();
+            Debug.Log("[SingleSceneSetupBootstrap] PoseLocker BeginCollect");
         }
         if (trustMonitor != null)
         {
             trustMonitor.OnTrustChanged += HandleTrustChanged;
             trustMonitor.BeginSetup();
+            Debug.Log("[SingleSceneSetupBootstrap] TrustMonitor BeginSetup");
         }
     }
 
@@ -95,6 +109,7 @@ public class Gameplay_SingleSceneSetupBootstrap : MonoBehaviour
         if (autoRetryOnFail && poseLocker != null)
         {
             Invoke(nameof(RestartCollect), retryDelaySeconds);
+            Debug.Log("[SingleSceneSetupBootstrap] Lock failed -> retry scheduled");
         }
     }
 
@@ -107,6 +122,7 @@ public class Gameplay_SingleSceneSetupBootstrap : MonoBehaviour
     {
         if (trustMonitor != null) trustMonitor.BeginSetup();
         poseLocker?.Retry();
+        Debug.Log("[SingleSceneSetupBootstrap] Restart collect");
     }
 
     private void TryStartGameplay()

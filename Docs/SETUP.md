@@ -48,6 +48,42 @@ Setup
 └─ Log (script: Common_LogToFile)
 ```
 
+### Setupシーン: オブジェクト作成手順
+- Directional Light: Hierarchy 右クリック > Light > Directional Light。
+- OVRCameraRig: Project の OVR/Prefabs から OVRCameraRig をドラッグ＆ドロップ（または Building Blocks の Camera Rig ブロック）。
+- MRUK_Manager / MRUtilityKit: Building Blocks から MR Utility Kit（MRUK）ブロックを追加。
+- QRPoseLockerRoot: Hierarchy 右クリック > Create Empty を作成し、`QRPoseLocker` と `QRTrustMonitor` コンポーネントをアタッチ（DontDestroy にする場合はスクリプト内で維持）。
+- QRObjectPositioner: Hierarchy 右クリック > Create Empty を作成し、`Setup_QRObjectPositioner` をアタッチ。Inspector で Prefab (hole/mole/mole_defeated/Golden_mole/Golden_mole_defeated) を割当。
+- CameraOrientationMonitor: Create Empty に `Common_CameraOrientationMonitor` をアタッチ。
+- HitPipeline: Create Empty に `Gameplay_HitPipeline` をアタッチ。
+- HitValidator: Create Empty に `Gameplay_HitValidator` をアタッチし、HitPipeline 参照を設定。
+- GameFlowController: Create Empty に `Common_GameFlowController` をアタッチ。
+- GameSessionManager: Create Empty に `Common_GameSessionManager` をアタッチ。
+- ScoreManager: Create Empty に `Common_ScoreManager` をアタッチ。
+- Log: Create Empty に `Common_LogToFile` をアタッチ。
+
+### Gameplayシーン: オブジェクト作成手順（UIなし最小構成）
+- Directional Light / Global Volume: Hierarchy 右クリックで追加（レンダリング用）。
+- OVRCameraRig: OVR/Prefabs からドラッグ、または Building Blocks の Camera Rig。
+- MRUK_Manager / MRUtilityKit: Building Blocks から MRUK ブロックを追加。
+- QRManager: Create Empty に `Common_QRManager` をアタッチ（Bootstrap でも可）。
+- QRObjectPositioner: Create Empty に `Setup_QRObjectPositioner` をアタッチ。Prefab (hole/mole/mole_defeated/Golden_mole/Golden_mole_defeated) を割当。
+- CameraOrientationMonitor: Create Empty に `Common_CameraOrientationMonitor` をアタッチ。
+- HitPipeline: Create Empty に `Gameplay_HitPipeline` をアタッチ。
+- HitValidator: Create Empty に `Gameplay_HitValidator` をアタッチし、HitPipeline を参照に設定。
+- GameFlowController: Create Empty に `Common_GameFlowController` をアタッチ。
+- GameSessionManager: Create Empty に `Common_GameSessionManager` をアタッチ。
+- ScoreManager: Create Empty に `Common_ScoreManager` をアタッチ。
+- (Optional) SingleSceneSetupBootstrap: Create Empty に `Gameplay_SingleSceneSetupBootstrap` をアタッチ（Gameplay単独起動用の暫定措置）。
+- UI は最小構成では不要。デバッグ表示を行う場合のみ Canvas を追加。
+
+### Resultsシーン: オブジェクト作成手順
+- Directional Light: Hierarchy 右クリック > Light > Directional Light。
+- OVRCameraRig: OVR/Prefabs からドラッグ（または Camera Rig ブロック）。
+- ResultUI: Canvas を World Space で配置し、`Results_ResultUIController` をアタッチ。Replay/Setup ボタンを配置し、GameFlowController に遷移イベントを接続。Text/TMP でスコアや統計表示。
+- GameFlowController: Create Empty に `Common_GameFlowController` をアタッチ（DontDestroy のものがあれば省略可）。
+- GameSessionManager: Create Empty に `Common_GameSessionManager` をアタッチ（セッション状態を参照）。
+- ScoreManager: Create Empty に `Common_ScoreManager` をアタッチ。
 Gameplay
 ```
 Gameplay

@@ -13,6 +13,8 @@ public class GameFlowController : MonoBehaviour
     [SerializeField] private string setupSceneName = "Setup";
     [SerializeField] private string gameplaySceneName = "Gameplay";
     [SerializeField] private string resultsSceneName = "Results";
+    [Header("Auto Attach (optional)")]
+    [SerializeField] private bool ensureMoleWaveController = true;
 
     private void Awake()
     {
@@ -61,6 +63,16 @@ public class GameFlowController : MonoBehaviour
             if (session != null && session.AutoStartOnGameplayScene)
             {
                 session.BeginSession();
+            }
+
+            if (ensureMoleWaveController)
+            {
+                var mwc = FindObjectOfType<Gameplay_MoleWaveController>();
+                if (mwc == null)
+                {
+                    gameObject.AddComponent<Gameplay_MoleWaveController>();
+                    Debug.Log("[GameFlowController] Added Gameplay_MoleWaveController automatically");
+                }
             }
         }
         else if (scene.name == setupSceneName)

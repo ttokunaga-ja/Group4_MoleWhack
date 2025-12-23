@@ -76,6 +76,7 @@ ExportedObj/
 
 # Unity3D generated file on crash reports
 sysinfo.txt
+log.txt
 
 # Mono auto generated files
 mono_crash.*
@@ -124,3 +125,46 @@ TempAssembly.dll
 /[Aa]ssets/TextMesh Pro/Examples & Extras/
 /[Aa]ssets/TextMesh Pro/Fonts/LiberationSans.ttf
 /[Aa]ssets/TextMesh Pro/Sprites/EmojiOne.png
+
+# Additional rules merged from ignore.conf
+~UnityDirMonSyncFile~*
+Desktop.ini
+.DS_Store*
+Thumbs.db
+
+# IDE/editor
+/.idea/
+/.vscode/
+*.code-workspace
+.vs/
+.gradle/
+.plastic/
+
+# temp/backup files
+*.orig
+*.bak
+*.swp
+
+# Private files
+*.private
+*.private.meta
+^*.private.[0-9]+$
+^*.private.[0-9]+.meta$
+
+# Addressables / StreamingAssets additional patterns
+**/assets/addressableassetsdata/*/*.bin*
+**/Assets/StreamingAssets/aa.meta
+**/assets/streamingassets/*/aa/*
+
+# Other OS/Mono artifacts
+sysinfo.txt
+log.txt
+mono_crash.*
+
+# Keep existing Unity folder ignores (case-insensitive)
+/[Ll]ibrary/
+/[Tt]emp/
+/[Oo]bj/
+/[Bb]uild/
+/[Bb]uilds/
+/[Uu]ser[Ss]ettings/

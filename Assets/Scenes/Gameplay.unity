@@ -610,8 +610,6 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: a1b3395c5cbde544387e0f3e427725ce, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::QRCodeTracker_MRUK
-  targetCubeTransform: {fileID: 0}
-  enableDetailedLogging: 1
 --- !u!65 &207147542
 BoxCollider:
   m_ObjectHideFlags: 0
@@ -1537,15 +1535,19 @@ MonoBehaviour:
   poseLocker: {fileID: 555555557}
   respawnPrefab: {fileID: 919132149155446097, guid: 6664b9d294a15fa49b221bb667f8e408, type: 3}
   enemyPrefab: {fileID: 919132149155446097, guid: 57abd08aa1e63e24fa1b31dab8ccbe1f, type: 3}
+  killedPrefab: {fileID: 919132149155446097, guid: 138a7e975e9074c37bb064bf4a601f4d, type: 3}
   enablePositioningLogging: 1
   useLockedPoseOnly: 1
   clearOnCollect: 1
   positionOffset: {x: 0, y: 0, z: 0}
   rotateWithQR: 1
-  cubeScale: 0.2
+  applyRotationOffset: 1
+  rotationOffsetEuler: {x: 90, y: 0, z: 0}
+  cubeScale: 0.1
   cubeHeightOffset: -0.1
-  sphereScale: 0.15
-  sphereHeightOffset: 0.35
+  sphereScale: 0.5
+  sphereHeightOffset: 0
+  killedScale: 0.2
 --- !u!4 &845719446
 Transform:
   m_ObjectHideFlags: 0
@@ -2065,8 +2067,6 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: a1b3395c5cbde544387e0f3e427725ce, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::QRCodeTracker_MRUK
-  targetCubeTransform: {fileID: 0}
-  enableDetailedLogging: 1
 --- !u!1 &1666470889
 GameObject:
   m_ObjectHideFlags: 0

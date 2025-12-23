@@ -1553,10 +1553,12 @@ MonoBehaviour:
   clearOnCollect: 0
   positionOffset: {x: 0, y: 0, z: 0}
   rotateWithQR: 1
-  cubeScale: 0.2
+  applyRotationOffset: 1
+  rotationOffsetEuler: {x: -90, y: 0, z: 0}
+  cubeScale: 0.1
   cubeHeightOffset: -0.1
-  sphereScale: 0.15
-  sphereHeightOffset: 0.35
+  sphereScale: 0.5
+  sphereHeightOffset: 0
 --- !u!4 &1500000003
 Transform:
   m_ObjectHideFlags: 0
